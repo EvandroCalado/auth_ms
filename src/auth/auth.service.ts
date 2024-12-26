@@ -1,5 +1,6 @@
 import { HttpStatus, Injectable } from '@nestjs/common';
 import { RpcException } from '@nestjs/microservices';
+import * as bcrypt from 'bcrypt';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { ErrorUserDto } from './dto/error-user.dto';
 import { RegisterUserDto } from './dto/register-user.dto';
@@ -38,7 +39,12 @@ export class AuthService {
         data: {
           name,
           email,
-          password,
+          password: bcrypt.hashSync(password, 10),
+        },
+        select: {
+          id: true,
+          name: true,
+          email: true,
         },
       });
 
