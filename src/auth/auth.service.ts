@@ -3,6 +3,7 @@ import { RpcException } from '@nestjs/microservices';
 import * as bcrypt from 'bcrypt';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { ErrorUserDto } from './dto/error-user.dto';
+import { LoginUserDto } from './dto/login-user.dto';
 import { RegisterUserDto } from './dto/register-user.dto';
 
 @Injectable()
@@ -59,5 +60,40 @@ export class AuthService {
         error: 'Internal server error',
       });
     }
+  }
+
+  async loginUser(loginUserDto: LoginUserDto) {
+    const { email, password } = loginUserDto;
+
+    const user = await this.prismaService.user.findUnique({
+      where: {
+        email,
+      },
+    });
+
+    if (!user) {
+      this.microServiceError({
+        statusCode: HttpStatus.BAD_REQUEST,
+        message: 'Invalid credentials',
+        error: 'Bad Request',
+      });
+    }
+
+    const { password: userPassword, ...rest } = user;
+
+    const passwordIdValid = await bcrypt.compare(password, userPassword);
+
+    if (!passwordIdValid) {
+      this.microServiceError({
+        statusCode: HttpStatus.BAD_REQUEST,
+        message: 'Invalid credentials',
+        error: 'Bad Request',
+      });
+    }
+
+    return {
+      user: rest,
+      token: '123465',
+    };
   }
 }
