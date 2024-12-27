@@ -2,6 +2,7 @@ import { HttpStatus, Injectable } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { RpcException } from '@nestjs/microservices';
 import * as bcrypt from 'bcrypt';
+import { envs } from 'src/configs/envs';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { ErrorUserDto } from './dto/error-user.dto';
 import { LoginUserDto } from './dto/login-user.dto';
@@ -105,5 +106,27 @@ export class AuthService {
       user: rest,
       token: await this.signJwt(rest),
     };
+  }
+
+  async verifyToken(token: string) {
+    try {
+      const { id, name, email } = this.jwtService.verify(token, {
+        secret: envs.JWT_SECRET,
+      });
+
+      const user = { id, name, email };
+
+      return {
+        user,
+        token: await this.signJwt(user),
+      };
+    } catch (error) {
+      console.log(error);
+      this.microServiceError({
+        statusCode: HttpStatus.UNAUTHORIZED,
+        message: 'Invalid credentials',
+        error: 'Unauthorized',
+      });
+    }
   }
 }
