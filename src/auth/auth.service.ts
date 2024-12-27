@@ -1,14 +1,23 @@
 import { HttpStatus, Injectable } from '@nestjs/common';
+import { JwtService } from '@nestjs/jwt';
 import { RpcException } from '@nestjs/microservices';
 import * as bcrypt from 'bcrypt';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { ErrorUserDto } from './dto/error-user.dto';
 import { LoginUserDto } from './dto/login-user.dto';
 import { RegisterUserDto } from './dto/register-user.dto';
+import { JwtPayload } from './interfaces/jwt-payload.interface';
 
 @Injectable()
 export class AuthService {
-  constructor(private readonly prismaService: PrismaService) {}
+  constructor(
+    private readonly prismaService: PrismaService,
+    private readonly jwtService: JwtService,
+  ) {}
+
+  async signJwt(payload: JwtPayload) {
+    return this.jwtService.sign(payload);
+  }
 
   private microServiceError(errorUserDto: ErrorUserDto) {
     throw new RpcException({
@@ -51,6 +60,7 @@ export class AuthService {
 
       return {
         user: newUser,
+        token: await this.signJwt(newUser),
       };
     } catch (error) {
       console.log(error);
@@ -93,7 +103,7 @@ export class AuthService {
 
     return {
       user: rest,
-      token: '123465',
+      token: await this.signJwt(rest),
     };
   }
 }
